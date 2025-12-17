@@ -2,64 +2,135 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Отключаем масштабирование, чтобы при клике в поле ввода страница не приближалась -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Мессенджер</title>
     <style>
-        /* СТИЛИ ОСТАЮТСЯ ТЕМИ ЖЕ */
-        body {
+        /* СБРОС И БАЗОВЫЕ НАСТРОЙКИ */
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            /* Самое важное исправление: */
+            height: 100dvh; /* Dynamic Viewport Height - учитывает адресную строку */
+            width: 100%;
             background-color: #121212;
             color: #e0e0e0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            
+            /* Делаем body flex-контейнером */
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            
+            /* Запрещаем прокрутку самой страницы, скроллить будем только чат */
             overflow: hidden;
+            
+            /* Убираем эффект "пружины" при прокрутке всей страницы на iOS */
+            overscroll-behavior: none;
         }
+
+        /* ШАПКА */
         header {
             background-color: #1f1f1f;
+            /* Добавляем отступ сверху для iPhone (чтобы не залезало под челку/часы) */
             padding: 15px 20px;
+            padding-top: calc(15px + env(safe-area-inset-top)); 
+            
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            flex-shrink: 0; /* Шапка не должна сжиматься */
+            z-index: 10;
         }
-        header a { color: #ff6b6b; text-decoration: none; border: 1px solid #ff6b6b; padding: 5px 10px; border-radius: 5px; }
+        header span { font-size: 1.1em; font-weight: 500; }
+        header a { 
+            color: #ff6b6b; 
+            text-decoration: none; 
+            border: 1px solid #ff6b6b; 
+            padding: 6px 12px; 
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        /* ОБЛАСТЬ ЧАТА */
         .chat-container {
-            flex: 1;
-            overflow-y: auto;
+            flex: 1; /* Занимает всё доступное место */
+            overflow-y: auto; /* Прокрутка работает только внутри этого блока */
             padding: 15px;
             display: flex;
             flex-direction: column;
             gap: 12px;
             background-color: #0f0f0f;
             scroll-behavior: smooth;
+            /* Для iOS, чтобы прокрутка была плавной */
+            -webkit-overflow-scrolling: touch; 
         }
+
+        /* СООБЩЕНИЯ */
         .message {
-            max-width: 75%;
+            max-width: 80%;
             padding: 10px 14px;
-            border-radius: 12px;
+            border-radius: 16px;
             position: relative;
             line-height: 1.4;
-            font-size: 15px;
+            font-size: 16px; /* 16px - комфортный размер для чтения */
             word-wrap: break-word;
         }
-        .message.other { background-color: #2b2b2b; align-self: flex-start; border-bottom-left-radius: 2px; }
-        .message.me { background-color: #005c99; align-self: flex-end; border-bottom-right-radius: 2px; padding-right: 34px; }
+        .message.other { background-color: #2b2b2b; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .message.me { background-color: #005c99; align-self: flex-end; border-bottom-right-radius: 4px; padding-right: 34px; }
         
         .username { font-size: 0.75em; color: #888; margin-bottom: 4px; display: block; font-weight: 600; }
-        .timestamp { font-size: 0.7em; color: rgba(255,255,255,0.4); margin-left: 8px; font-weight: normal; }
-        
+        .timestamp { font-size: 0.75em; color: rgba(255,255,255,0.4); margin-left: 6px; font-weight: normal; }
+
         .delete-btn {
-            position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
-            background: rgba(0,0,0,0.2); border: none; color: #ffcccc;
-            width: 24px; height: 24px; border-radius: 50%;
+            position: absolute; top: 50%; right: 5px; transform: translateY(-50%);
+            background: none; border: none; color: #ffcccc; opacity: 0.7;
+            width: 30px; height: 30px; /* Увеличили зону клика для пальца */
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 12px;
+            cursor: pointer; font-size: 14px;
         }
-        .input-area { background-color: #1f1f1f; padding: 15px; display: flex; gap: 10px; border-top: 1px solid #333; }
-        input[type="text"] { flex: 1; padding: 12px 15px; border-radius: 25px; border: 1px solid #444; background-color: #2b2b2b; color: white; font-size: 16px; outline: none; }
-        button[type="submit"] { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 25px; font-weight: bold; cursor: pointer; }
+
+        /* ОБЛАСТЬ ВВОДА */
+        .input-area {
+            background-color: #1f1f1f;
+            padding: 12px;
+            /* Добавляем отступ снизу для iPhone (полоска "Домой") */
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #333;
+            flex-shrink: 0; /* Не сжимать */
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 24px;
+            border: 1px solid #444;
+            background-color: #2b2b2b;
+            color: white;
+            font-size: 16px; /* Чтобы iOS не зумил страницу */
+            outline: none;
+            /* Убираем стили iOS для инпутов */
+            -webkit-appearance: none; 
+        }
+        input[type="text"]:focus { border-color: #007bff; }
+
+        button[type="submit"] {
+            width: 44px; height: 44px; /* Круглая удобная кнопка */
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            padding-left: 4px; /* Визуальная компенсация стрелочки */
+        }
     </style>
 </head>
 <body>
@@ -70,53 +141,57 @@
     </header>
 
     <div class="chat-container" id="chat">
-        <!-- Сообщения будут загружаться сюда через JavaScript -->
+        <!-- Сообщения грузятся JS-ом -->
     </div>
 
     <div class="input-area">
-        <!-- Форма больше не имеет action, мы перехватим отправку JS-ом -->
         <form id="msgForm" style="width: 100%; display: flex; gap: 10px;">
             <input type="text" id="msgInput" placeholder="Сообщение..." required autocomplete="off">
             <button type="submit">➤</button>
         </form>
     </div>
 
+    <!-- JAVASCRIPT ОСТАЕТСЯ ТАКИМ ЖЕ, КАК БЫЛ -->
     <script>
         const chatBox = document.getElementById('chat');
         const msgForm = document.getElementById('msgForm');
         const msgInput = document.getElementById('msgInput');
-        
-        // Запоминаем ID последнего сообщения, чтобы не грузить одни и те же
         let lastMessageId = 0;
 
-        // 1. Функция загрузки сообщений
         function loadMessages() {
             fetch(`/get_messages?after_id=${lastMessageId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.length > 0) {
+                        // Определяем, был ли пользователь внизу чата ДО загрузки новых сообщений
+                        // Погрешность в 10 пикселей на случай неточных расчетов
+                        const isAtBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight < 50;
+
                         data.forEach(msg => {
-                            addMessageToChat(msg);
-                            // Обновляем счетчик
                             if (msg.id > lastMessageId) {
+                                addMessageToChat(msg);
                                 lastMessageId = msg.id;
                             }
                         });
-                        // Прокручиваем вниз при новых сообщениях
-                        chatBox.scrollTop = chatBox.scrollHeight;
+
+                        // Если пользователь был внизу или это первая загрузка - прокручиваем
+                        if (isAtBottom || lastMessageId === data.length) {
+                            scrollToBottom();
+                        }
                     }
                 })
-                .catch(err => console.error("Ошибка загрузки:", err));
+                .catch(err => console.error(err));
         }
 
-        // 2. Функция добавления HTML сообщения в чат
+        function scrollToBottom() {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
         function addMessageToChat(msg) {
             const div = document.createElement('div');
-            // Проверяем, кто автор (me или other)
             const msgClass = msg.is_mine ? 'me' : 'other';
             div.className = `message ${msgClass}`;
             
-            // Собираем HTML кнопки удаления (только для своих)
             let deleteHtml = '';
             if (msg.is_mine) {
                 deleteHtml = `
@@ -134,42 +209,34 @@
                 ${msg.content}
                 ${deleteHtml}
             `;
-            
             chatBox.appendChild(div);
         }
 
-        // 3. Отправка сообщения без перезагрузки
         msgForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // Останавливаем обычную отправку формы
-            
+            e.preventDefault();
             const content = msgInput.value;
             if (!content.trim()) return;
-
-            // Чистим поле сразу
             msgInput.value = '';
+            
+            // На мобилках полезно вернуть фокус, но иногда это скрывает клавиатуру.
+            // msgInput.focus(); 
 
             fetch('/send_message', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: content })
             })
             .then(res => res.json())
             .then(response => {
                 if (response.status === 'ok') {
-                    // Сразу подгружаем сообщения, чтобы увидеть своё
                     loadMessages();
+                    setTimeout(scrollToBottom, 100); // Небольшая задержка для надежности
                 }
             });
         });
 
-        // Запускаем загрузку сообщений сразу при старте
         loadMessages();
-
-        // И потом каждые 2 секунды (polling)
         setInterval(loadMessages, 2000);
-
     </script>
 </body>
 </html>
