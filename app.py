@@ -1,5 +1,6 @@
 import os
 import psycopg2
+import requests
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
 from argon2 import PasswordHasher
 
@@ -13,6 +14,20 @@ app.secret_key = os.environ.get('SECRET_KEY', 'default_secret_key_for_dev')
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 ph = PasswordHasher()
+
+def send_ntfy(message):
+    # Просто отправляем POST запрос на их сервер
+    # Замените 'flask_chat_secret_key_777' на то, что придумали вы
+    try:
+        requests.post("https://ntfy.sh/myaapmess", 
+                      data=message.encode('utf-8'),
+                      headers={
+                          "Title": "Новое сообщение",
+                          "Priority": "high"
+                      })
+    except:
+        pass
+
 
 # --- РАБОТА С БАЗОЙ ДАННЫХ ---
 def get_db_connection():
