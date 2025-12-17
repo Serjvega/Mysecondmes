@@ -23,18 +23,19 @@ ph = PasswordHasher()
 
 # --- ФУНКЦИЯ УВЕДОМЛЕНИЙ NTFY ---
 def send_ntfy_notification(sender_name, message_text):
-    """Отправляет пуш-уведомление через ntfy.sh"""
+    """Отправляет пуш-уведомление через ntfy.sh (через JSON)"""
     try:
         requests.post(
-            f"https://ntfy.sh/{NTFY_TOPIC}",
-            data=message_text.encode('utf-8'), # Кодируем текст, чтобы смайлики и русский язык работали
-            headers={
-                "Title": f"Новое от {sender_name}", # Заголовок уведомления
-                "Priority": "high",                  # Высокий приоритет (будит телефон)
-                "Click": SITE_URL,                   # При нажатии открывает ваш сайт
-                "Tags": "message"                    # Иконка сообщения
+            "https://ntfy.sh/",
+            json={
+                "topic": NTFY_TOPIC,  # Ваша секретная тема
+                "message": message_text,
+                "title": f"Новое от {sender_name}",
+                "priority": 4,        # 4 = High priority
+                "click": SITE_URL,
+                "tags": ["message"]
             },
-            timeout=1 # Не ждем ответа дольше 1 секунды, чтобы чат не тормозил
+            timeout=1
         )
     except Exception as e:
         print(f"Ошибка отправки уведомления: {e}")
