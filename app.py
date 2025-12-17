@@ -32,7 +32,7 @@ def send_ntfy_notification(sender_name, message_text):
                 "message": message_text,
                 "title": f"Новое от {sender_name}",
                 "priority": 4,        # 4 = High priority
-                "click": SITE_URL,
+                "click": 'https://mysecondmes-2.onrender.com',
                 "tags": ["message"]
             },
             timeout=1
