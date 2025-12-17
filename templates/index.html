@@ -168,7 +168,7 @@
             <div class="message {% if msg[1] == username %}me{% else %}other{% endif %}">
                 <span class="username">
                     {{ msg[1] }} 
-                    <span class="timestamp">{{ msg[3][11:16] }}</span> <!-- Обрезаем дату до часов:минут -->
+                    <span class="timestamp">{{ msg[3].strftime('%H:%M') }}</span> <!-- Обрезаем дату до часов:минут -->
                 </span>
                 {{ msg[2] }}
 
